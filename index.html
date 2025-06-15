@@ -1,0 +1,690 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FrameMagic - Photo Frame Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Fallback */
+            color: #e5e7eb;
+            scroll-behavior: smooth;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .font-dm-mono {
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* Main content styling */
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 8rem); /* Adjust based on header/footer */
+            padding: 1rem;
+        }
+
+        @media (min-width: 1024px) {
+            .content-wrapper {
+                flex-direction: row;
+                justify-content: space-around;
+                align-items: flex-start;
+                gap: 2rem;
+            }
+        }
+
+
+        /* Canvas styling */
+        #previewCanvas {
+            border: 2px dashed #4b5563; /* Dashed border for drop zone feel */
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Remove extra space below canvas */
+            margin: 0 auto; /* Center canvas */
+        }
+
+        /* Frame selection styling */
+        .frame-options-container {
+            background-color: rgba(31, 41, 55, 0.5); /* Semi-transparent dark bg */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.2);
+            max-height: 70vh; /* Limit height and allow scrolling */
+            overflow-y: auto;
+        }
+
+        .frame-button {
+            background-color: #374151; /* Darker gray */
+            color: #d1d5db; /* Light gray text */
+            border: 1px solid #4b5563;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.875rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .frame-button:hover {
+            background-color: #4b5563; /* Medium gray */
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .frame-button.active {
+            background-color: #00c2ff; /* Accent color */
+            color: #111827; /* Dark text for contrast */
+            border-color: #00a1cc;
+            box-shadow: 0 0 15px rgba(0, 194, 255, 0.5);
+        }
+
+        /* Input and Button styling */
+        .styled-input, .styled-button {
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            font-family: 'DM Mono', monospace;
+            border: 1px solid #4b5563;
+            background-color: #1f2937; /* Dark input bg */
+            color: #e5e7eb;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .styled-input:focus {
+            outline: none;
+            border-color: #00c2ff;
+            box-shadow: 0 0 0 2px rgba(0, 194, 255, 0.3);
+        }
+        .styled-button {
+            background-color: #007bff; /* Primary button blue */
+            color: white;
+            cursor: pointer;
+        }
+        .styled-button:hover {
+            background-color: #0056b3;
+        }
+        .download-button {
+             background-color: #28a745; /* Green for download */
+        }
+        .download-button:hover {
+            background-color: #1e7e34;
+        }
+
+        /* Custom scrollbar for frame options */
+        .frame-options-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .frame-options-container::-webkit-scrollbar-track {
+            background: rgba(55, 65, 81, 0.5);
+            border-radius: 10px;
+        }
+        .frame-options-container::-webkit-scrollbar-thumb {
+            background: #6b7280;
+            border-radius: 10px;
+        }
+        .frame-options-container::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Glyph animation (subtle loading or accent) */
+        .glyph-loader {
+            display: flex;
+            gap: 4px;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.3s ease;
+        }
+        .glyph-loader.visible {
+            opacity: 1;
+        }
+        .glyph-bar-sm {
+            width: 10px; height: 3px; background-color: #9ca3af; border-radius: 1px;
+            animation: glyph-pulse-sm 1.5s infinite ease-in-out;
+        }
+        .glyph-bar-sm:nth-child(1) { animation-delay: 0s; }
+        .glyph-bar-sm:nth-child(2) { animation-delay: 0.15s; }
+        .glyph-bar-sm:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes glyph-pulse-sm {
+            0%, 100% { opacity: 0.3; transform: scaleY(0.7); }
+            50% { opacity: 1; transform: scaleY(1); }
+        }
+
+        /* Text input for quotes */
+        #quoteInput {
+            width: 100%;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .frame-options-container {
+                max-height: 40vh; /* Shorter on mobile */
+                margin-top: 1rem;
+            }
+            #previewCanvas {
+                max-height: 50vh;
+            }
+        }
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-neutral-900 via-slate-900 to-black min-h-screen">
+
+    <header class="sticky top-0 z-50 bg-neutral-900/80 backdrop-blur-md shadow-lg">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-dm-mono font-bold text-white">Frame[FX]</a>
+            <div class="glyph-loader" id="loadingIndicator">
+                <div class="glyph-bar-sm"></div>
+                <div class="glyph-bar-sm"></div>
+                <div class="glyph-bar-sm"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-wrapper container mx-auto py-8 px-4">
+
+        <div class="w-full lg:w-1/3 space-y-6 mb-8 lg:mb-0">
+            <div class="bg-neutral-800/50 p-6 rounded-xl shadow-xl border border-neutral-700/50">
+                <h2 class="text-2xl font-dm-mono font-semibold text-white mb-4">1. Upload Your Photo</h2>
+                <input type="file" id="imageUpload" accept="image/*" class="styled-input w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-slate-100 hover:file:bg-slate-600">
+                <p class="text-xs text-neutral-400 mt-2">Max file size: 5MB. JPG, PNG, WEBP preferred.</p>
+            </div>
+
+            <div class="frame-options-container">
+                <h2 class="text-2xl font-dm-mono font-semibold text-white mb-4 sticky top-0 bg-neutral-800/70 py-2 backdrop-blur-sm">2. Choose a Frame</h2>
+                <div id="quoteInputContainer" class="hidden my-2">
+                    <label for="quoteInput" class="block text-sm font-dm-mono text-neutral-300 mb-1">Enter Your Text:</label>
+                    <textarea id="quoteInput" rows="2" class="styled-input w-full bg-neutral-700" placeholder="e.g., Happy Birthday! or Custom Quote..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    </div>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-2/3 space-y-6">
+            <div class="bg-neutral-800/50 p-4 md:p-6 rounded-xl shadow-xl border border-neutral-700/50">
+                <h2 class="text-2xl font-dm-mono font-semibold text-white mb-4 text-center">3. Preview & Download</h2>
+                <div class="max-w-full mx-auto relative">
+                    <canvas id="previewCanvas" width="800" height="600"></canvas>
+                    <p id="canvasPlaceholder" class="absolute inset-0 flex items-center justify-center text-neutral-500 font-dm-mono text-lg pointer-events-none">Upload an image to begin</p>
+                </div>
+                <button id="downloadButton" class="styled-button download-button w-full mt-6 py-3 text-lg" disabled>Download Framed Photo</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-6 bg-neutral-950 text-center mt-auto">
+        <p class="text-neutral-500 text-sm font-dm-mono">&copy; <span id="currentYear"></span> Frame[FX]. Create amazing framed photos.</p>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const imageUpload = document.getElementById('imageUpload');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const ctx = previewCanvas.getContext('2d');
+        const downloadButton = document.getElementById('downloadButton');
+        const frameOptionsContainer = document.querySelector('.frame-options-container .grid');
+        const currentYearSpan = document.getElementById('currentYear');
+        const canvasPlaceholder = document.getElementById('canvasPlaceholder');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const quoteInputContainer = document.getElementById('quoteInputContainer');
+        const quoteInput = document.getElementById('quoteInput');
+
+
+        let uploadedImage = null;
+        let currentFrame = 'none';
+        let animationFrameId = null; // To control animations
+        let particles = []; // For particle effects
+
+        const CANVAS_MAX_WIDTH = 800;
+        const CANVAS_MAX_HEIGHT = 600;
+
+        // --- Available Frames ---
+        const frames = [
+            { id: 'none', name: 'No Frame' },
+            { id: 'blackAndWhite', name: 'B & W' },
+            { id: 'gradientBorder', name: 'Gradient Border' },
+            { id: 'silverBorder', name: 'Silver Border' },
+            { id: 'woodenLook', name: 'Wooden Look' },
+            { id: 'glitterOverlay', name: 'Glitter' },
+            { id: 'sparkles', name: 'Sparkles' },
+            { id: 'snowflakes', name: 'Snowflakes' },
+            { id: 'confetti', name: 'Confetti' },
+            { id: 'bubbles', name: 'Bubbles' },
+            { id: 'rain', name: 'Rain Drops' },
+            { id: 'cherryBlossoms', name: 'Cherry Blossoms' },
+            { id: 'birthday', name: 'Birthday Fun' },
+            { id: 'loveLyrics', name: 'Love Lyrics' }, // Will use quoteInput
+            { id: 'customQuote', name: 'Custom Quote' } // Will use quoteInput
+        ];
+
+        // --- Initialization ---
+        function init() {
+            currentYearSpan.textContent = new Date().getFullYear();
+            populateFrameButtons();
+            setupEventListeners();
+            drawCanvasBackground(); // Initial placeholder background
+        }
+
+        function populateFrameButtons() {
+            frames.forEach(frame => {
+                const button = document.createElement('button');
+                button.classList.add('frame-button');
+                button.textContent = frame.name;
+                button.dataset.frameId = frame.id;
+                button.addEventListener('click', () => {
+                    setActiveFrame(frame.id);
+                    // Show/hide quote input
+                    if (frame.id === 'loveLyrics' || frame.id === 'customQuote') {
+                        quoteInputContainer.classList.remove('hidden');
+                    } else {
+                        quoteInputContainer.classList.add('hidden');
+                    }
+                });
+                frameOptionsContainer.appendChild(button);
+            });
+        }
+
+        function setupEventListeners() {
+            imageUpload.addEventListener('change', handleImageUpload);
+            downloadButton.addEventListener('click', handleDownload);
+            quoteInput.addEventListener('input', () => {
+                 if (currentFrame === 'loveLyrics' || currentFrame === 'customQuote') {
+                    redrawCanvas();
+                 }
+            });
+        }
+
+        function showLoading(isLoading) {
+            loadingIndicator.classList.toggle('visible', isLoading);
+        }
+
+        // --- Image Handling ---
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                showLoading(true);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImage = new Image();
+                    uploadedImage.onload = () => {
+                        canvasPlaceholder.classList.add('hidden');
+                        resizeCanvasToImage();
+                        redrawCanvas();
+                        downloadButton.disabled = false;
+                        showLoading(false);
+                    };
+                    uploadedImage.onerror = () => {
+                        alert("Error loading image. Please try a different file.");
+                        canvasPlaceholder.textContent = "Error loading image.";
+                        canvasPlaceholder.classList.remove('hidden');
+                        uploadedImage = null;
+                        showLoading(false);
+                    }
+                    uploadedImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resizeCanvasToImage() {
+            if (!uploadedImage) return;
+
+            let ratio = Math.min(CANVAS_MAX_WIDTH / uploadedImage.naturalWidth, CANVAS_MAX_HEIGHT / uploadedImage.naturalHeight);
+            // If image is smaller than max dimensions, don't scale up beyond its natural size unless it's very small
+            if (uploadedImage.naturalWidth < CANVAS_MAX_WIDTH && uploadedImage.naturalHeight < CANVAS_MAX_HEIGHT) {
+                 ratio = Math.min(1, ratio); // Don't upscale small images too much, but ensure they fit if large
+            }
+            
+            previewCanvas.width = uploadedImage.naturalWidth * ratio;
+            previewCanvas.height = uploadedImage.naturalHeight * ratio;
+        }
+
+
+        // --- Canvas Drawing ---
+        function drawCanvasBackground() {
+            ctx.fillStyle = '#2d3748'; // Dark gray background for canvas before image load
+            ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+            if (!uploadedImage) {
+                canvasPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        function redrawCanvas() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            particles = []; // Reset particles for new frame or redraw
+
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            drawCanvasBackground(); // Redraw background in case image is not there
+
+            if (uploadedImage) {
+                ctx.save(); // Save context before applying filters or transformations
+                
+                // Apply B&W filter if selected
+                if (currentFrame === 'blackAndWhite') {
+                    ctx.filter = 'grayscale(100%)';
+                } else {
+                    ctx.filter = 'none';
+                }
+                
+                ctx.drawImage(uploadedImage, 0, 0, previewCanvas.width, previewCanvas.height);
+                ctx.restore(); // Restore context to remove filter for other drawings
+
+                applyFrame(currentFrame);
+            } else {
+                 canvasPlaceholder.textContent = "Upload an image to begin";
+                 canvasPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        function setActiveFrame(frameId) {
+            currentFrame = frameId;
+            document.querySelectorAll('.frame-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.frameId === frameId);
+            });
+            redrawCanvas();
+        }
+
+        // --- Frame Application Logic ---
+        function applyFrame(frameId) {
+            const w = previewCanvas.width;
+            const h = previewCanvas.height;
+
+            // Stop any ongoing animation before starting a new one
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            particles = []; // Clear particles for new frame
+
+            switch (frameId) {
+                case 'gradientBorder':
+                    drawGradientBorder(w, h);
+                    break;
+                case 'silverBorder':
+                    drawBorder(w, h, 'silver', 15);
+                    break;
+                case 'woodenLook':
+                    drawWoodenLookFrame(w, h);
+                    break;
+                case 'glitterOverlay':
+                    drawGlitterOverlay(w, h); // Static glitter
+                    break;
+                case 'sparkles':
+                case 'snowflakes':
+                case 'confetti':
+                case 'bubbles':
+                case 'rain':
+                case 'cherryBlossoms':
+                    initParticles(frameId, w, h);
+                    animateParticles(frameId);
+                    break;
+                case 'birthday':
+                    drawBirthdayFrame(w, h);
+                    break;
+                case 'loveLyrics':
+                case 'customQuote':
+                    drawTextOnCanvas(quoteInput.value || (frameId === 'loveLyrics' ? "I Love You ❤️" : "Your Quote Here"), w, h);
+                    break;
+                // 'blackAndWhite' is handled by ctx.filter directly in redrawCanvas
+                // 'none' needs no additional drawing
+            }
+        }
+
+        // --- Specific Frame Drawing Functions ---
+        function drawGradientBorder(w, h) {
+            const thickness = Math.min(w,h) * 0.05;
+            ctx.lineWidth = thickness;
+            const grad = ctx.createLinearGradient(0, 0, w, h);
+            grad.addColorStop(0, '#7f00ff'); // Purple
+            grad.addColorStop(0.5, '#00c2ff'); // Cyan
+            grad.addColorStop(1, '#ff007f'); // Magenta
+            ctx.strokeStyle = grad;
+            ctx.strokeRect(thickness / 2, thickness / 2, w - thickness, h - thickness);
+        }
+
+        function drawBorder(w, h, color, thickness) {
+            thickness = Math.min(w,h) * 0.04;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = thickness;
+            if (color === 'silver') {
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+                ctx.shadowBlur = 10;
+            }
+            ctx.strokeRect(thickness / 2, thickness / 2, w - thickness, h - thickness);
+            ctx.shadowColor = 'transparent'; // Reset shadow
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawWoodenLookFrame(w, h) {
+            const thickness = Math.min(w,h) * 0.07;
+            ctx.fillStyle = '#8B4513'; // SaddleBrown
+            ctx.fillRect(0, 0, w, thickness); // Top
+            ctx.fillRect(0, h - thickness, w, thickness); // Bottom
+            ctx.fillRect(0, 0, thickness, h); // Left
+            ctx.fillRect(w - thickness, 0, thickness, h); // Right
+
+            // Simple grain effect
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 20; i++) {
+                ctx.beginPath();
+                ctx.moveTo(thickness + Math.random() * (w - 2 * thickness), thickness);
+                ctx.lineTo(thickness + Math.random() * (w - 2 * thickness), h - thickness);
+                ctx.stroke();
+            }
+        }
+
+        function drawGlitterOverlay(w, h) {
+            const numGlitter = 300;
+            for (let i = 0; i < numGlitter; i++) {
+                const x = Math.random() * w;
+                const y = Math.random() * h;
+                const size = Math.random() * 2 + 0.5;
+                const opacity = Math.random() * 0.5 + 0.3;
+                ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`; // Gold-ish
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawTextOnCanvas(text, w, h) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            
+            let fontSize = Math.min(w, h) * 0.08; // Responsive font size
+            if (text.length > 20) fontSize *= 0.7;
+            if (text.length > 40) fontSize *= 0.7;
+
+            ctx.font = `bold ${fontSize}px 'DM Mono', monospace`;
+
+            const lines = text.split('\n');
+            const lineHeight = fontSize * 1.2;
+            const totalTextHeight = lines.length * lineHeight;
+            let startY = h * 0.85 - totalTextHeight / 2; // Position towards bottom
+
+            lines.forEach((line, index) => {
+                const yPos = startY + (index * lineHeight);
+                ctx.strokeText(line, w / 2, yPos);
+                ctx.fillText(line, w / 2, yPos);
+            });
+        }
+
+        function drawBirthdayFrame(w, h) {
+            // Simple confetti border
+            const numConfetti = 100;
+            const colors = ['#ff4e4e', '#4eff7a', '#4eb8ff', '#ffdb4e', '#ba4eff'];
+            for (let i = 0; i < numConfetti; i++) {
+                const size = Math.random() * 8 + 4;
+                let x, y;
+                if (Math.random() < 0.5) { // Top/Bottom borders
+                    x = Math.random() * w;
+                    y = Math.random() < 0.5 ? Math.random() * 20 : h - 20 + Math.random() * 20;
+                } else { // Left/Right borders
+                    y = Math.random() * h;
+                    x = Math.random() < 0.5 ? Math.random() * 20 : w - 20 + Math.random() * 20;
+                }
+                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                ctx.fillRect(x - size / 2, y - size / 2, size, size);
+            }
+            drawTextOnCanvas("Happy Birthday!", w, h * 0.9); // Text slightly higher
+        }
+
+
+        // --- Particle System ---
+        function createParticle(type, w, h) {
+            const p = {
+                x: Math.random() * w,
+                y: type === 'bubbles' ? h + Math.random() * 50 : Math.random() * h * 0.2, // Bubbles from bottom, others from top
+                vx: (Math.random() - 0.5) * (type === 'confetti' ? 2 : 1),
+                vy: Math.random() * (type === 'bubbles' ? -2 : 2) + 0.5, // Bubbles move up
+                size: Math.random() * (type === 'snowflakes' ? 4 : (type === 'cherryBlossoms' ? 10 : 6)) + 2,
+                color: type === 'snowflakes' ? 'white' : 
+                       type === 'cherryBlossoms' ? `hsl(330, 100%, ${80 + Math.random()*15}%)` : // Pinks
+                       type === 'confetti' ? `hsl(${Math.random() * 360}, 100%, 70%)` : 
+                       type === 'bubbles' ? 'rgba(200, 220, 255, 0.5)' :
+                       type === 'rain' ? 'rgba(150, 180, 255, 0.7)' :
+                       `rgba(255, 255, 224, ${Math.random() * 0.5 + 0.5})`, // Sparkles
+                type: type,
+                angle: type === 'cherryBlossoms' || type === 'confetti' ? Math.random() * Math.PI * 2 : 0,
+                spin: type === 'cherryBlossoms' || type === 'confetti' ? (Math.random() - 0.5) * 0.1 : 0
+            };
+            if (type === 'rain') {
+                p.y = Math.random() * -h; // Start rain off-screen top
+                p.vy = Math.random() * 5 + 5; // Faster rain
+                p.vx = 0.5; // Slight angle
+                p.len = p.size * 3;
+            }
+            return p;
+        }
+
+        function initParticles(type, w, h) {
+            particles = [];
+            const count = type === 'sparkles' ? 50 : type === 'snowflakes' ? 100 : type === 'confetti' ? 70 : type === 'bubbles' ? 30 : type === 'rain' ? 150 : 40;
+            for (let i = 0; i < count; i++) {
+                particles.push(createParticle(type, w, h));
+            }
+        }
+
+        function updateAndDrawParticles(type, w, h) {
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.angle += p.spin;
+
+                // Boundary conditions
+                if (p.y > h + p.size || p.y < -p.size - (p.type === 'rain' ? p.len : 0) || p.x > w + p.size || p.x < -p.size) {
+                    particles[i] = createParticle(type, w, h); // Reset particle
+                    if (type === 'bubbles') particles[i].y = h + Math.random() * 50; // Bubbles from bottom
+                    else if (type === 'rain') particles[i].y = Math.random() * -h * 0.5; // Rain from top
+                    else particles[i].y = -p.size; // Other particles from top
+                }
+
+                // Drawing
+                ctx.fillStyle = p.color;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle);
+
+                if (type === 'sparkles') {
+                    ctx.beginPath();
+                    for (let j = 0; j < 5; j++) { // Star shape
+                        ctx.lineTo(Math.cos((18 + j * 72) / 180 * Math.PI) * p.size, -Math.sin((18 + j * 72) / 180 * Math.PI) * p.size);
+                        ctx.lineTo(Math.cos((54 + j * 72) / 180 * Math.PI) * p.size * 0.4, -Math.sin((54 + j * 72) / 180 * Math.PI) * p.size * 0.4);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (type === 'snowflakes' || type === 'bubbles') {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                     if (type === 'bubbles') { // Add highlight to bubbles
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                        ctx.lineWidth = p.size * 0.1;
+                        ctx.beginPath();
+                        ctx.arc(p.size * -0.2, p.size * -0.2, p.size * 0.5, 0, Math.PI * 0.5);
+                        ctx.stroke();
+                    }
+                } else if (type === 'confetti') {
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * (Math.random() > 0.5 ? 1 : 0.5)); // Rectangular confetti
+                } else if (type === 'rain') {
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = p.size / 3;
+                    ctx.beginPath();
+                    ctx.moveTo(0,0);
+                    ctx.lineTo(0, p.len);
+                    ctx.stroke();
+                } else if (type === 'cherryBlossoms') {
+                    // Simple petal shape (ellipse)
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, p.size, p.size / 2, Math.PI / 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function animateParticles(type) {
+            ctx.drawImage(uploadedImage, 0, 0, previewCanvas.width, previewCanvas.height); // Redraw base image
+            
+            // Re-apply non-particle frame elements if any were part of a combined effect (not currently the case)
+            // For example, if a particle effect was ON TOP of a border, draw border first.
+            // This example keeps particles as the primary frame effect when active.
+
+            updateAndDrawParticles(type, previewCanvas.width, previewCanvas.height);
+            animationFrameId = requestAnimationFrame(() => animateParticles(type));
+        }
+
+        // --- Download ---
+        function handleDownload() {
+            if (!uploadedImage) {
+                alert("Please upload an image first.");
+                return;
+            }
+            showLoading(true);
+            // Ensure canvas is fully drawn before downloading, especially for animations
+            // For animations, we might want to capture a single frame or let it run for a bit
+            // For simplicity, this captures the current state.
+            // If an animation is running, it captures that frame.
+            // To ensure all static elements are drawn if animation was just stopped:
+            if (!animationFrameId && currentFrame !== 'none' && currentFrame !== 'blackAndWhite') {
+                 // Temporarily redraw static parts of the frame if it's a particle one that just stopped
+                if (['sparkles', 'snowflakes', 'confetti', 'bubbles', 'rain', 'cherryBlossoms'].includes(currentFrame)) {
+                    // This is tricky because particles are drawn over time.
+                    // For download, we might want to draw a "final" state of particles or just the image.
+                    // For now, it downloads what's currently on canvas.
+                }
+            }
+
+
+            const dataURL = previewCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'framed-photo.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showLoading(false);
+        }
+
+        // --- Start the application ---
+        init();
+    </script>
+
+</body>
+</html>        
