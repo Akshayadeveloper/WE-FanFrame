@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couple's Love Frame Studio - WilliamEST FanUniverse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;700&family=Parisienne&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Fallback */
+            color: #e5e7eb;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        .font-dm-mono { font-family: 'DM Mono', monospace; }
+        .font-parisienne { font-family: 'Parisienne', cursive; } /* Romantic script font */
+
+        .content-wrapper { display: flex; flex-direction: column; align-items: center; min-height: calc(100vh - 8rem); padding: 1rem; }
+        @media (min-width: 1024px) { .content-wrapper { flex-direction: row; justify-content: space-around; align-items: flex-start; gap: 2rem; } }
+
+        #previewCanvas { border: 2px dashed #4b5563; border-radius: 0.5rem; max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .options-panel {
+            background-color: rgba(31, 41, 55, 0.6); /* Semi-transparent dark bg */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(75, 85, 99, 0.6);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.4), 0 8px 15px -6px rgba(0,0,0,0.3);
+            max-height: 80vh; /* Limit height and allow scrolling */
+            overflow-y: auto;
+        }
+         @media (max-width: 1023px) { .options-panel { max-height: none; } }
+
+
+        .frame-button {
+            background-color: #374151; color: #d1d5db; border: 1px solid #4b5563;
+            padding: 0.75rem 1rem; border-radius: 0.375rem; font-family: 'DM Mono', monospace;
+            font-size: 0.875rem; text-align: center; cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .frame-button:hover { background-color: #4b5563; color: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .frame-button.active { background-color: #ec4899; /* Romantic Pink */ color: #111827; border-color: #db2777; box-shadow: 0 0 15px rgba(236, 72, 153, 0.5); }
+
+        .styled-input, .styled-button, .styled-textarea {
+            padding: 0.75rem 1rem; border-radius: 0.375rem; font-family: 'DM Mono', monospace;
+            border: 1px solid #4b5563; background-color: #1f2937; color: #e5e7eb;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .styled-input:focus, .styled-textarea:focus { outline: none; border-color: #ec4899; box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.3); }
+        
+        .styled-button { background-color: #8b5cf6; /* Violet */ color: white; cursor: pointer; }
+        .styled-button:hover { background-color: #7c3aed; }
+        .download-button { background-color: #10b981; /* Emerald Green */ }
+        .download-button:hover { background-color: #059669; }
+
+        .options-panel::-webkit-scrollbar { width: 8px; }
+        .options-panel::-webkit-scrollbar-track { background: rgba(55, 65, 81, 0.5); border-radius: 10px; }
+        .options-panel::-webkit-scrollbar-thumb { background: #6b7280; border-radius: 10px; }
+        .options-panel::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        .glyph-loader { display: flex; gap: 4px; opacity: 0; transition: opacity 0.3s ease; }
+        .glyph-loader.visible { opacity: 1; }
+        .glyph-bar-sm { width: 10px; height: 3px; background-color: #ec4899; border-radius: 1px; animation: glyph-pulse-sm 1.5s infinite ease-in-out; }
+        .glyph-bar-sm:nth-child(1) { animation-delay: 0s; } .glyph-bar-sm:nth-child(2) { animation-delay: 0.15s; } .glyph-bar-sm:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes glyph-pulse-sm { 0%, 100% { opacity: 0.3; transform: scaleY(0.7); } 50% { opacity: 1; transform: scaleY(1); } }
+
+        .checkbox-label { display: flex; align-items: center; font-size: 0.875rem; color: #d1d5db; cursor: pointer; }
+        .checkbox-label input { margin-right: 0.5rem; accent-color: #ec4899; }
+
+        .section-title { font-family: 'DM Mono', monospace; color: #f3f4f6; border-bottom: 1px solid #4b5563; padding-bottom: 0.5rem; margin-bottom: 1rem;}
+    </style>
+</head>
+<body class="bg-gradient-to-br from-neutral-900 via-slate-900 to-black min-h-screen">
+
+    <header class="sticky top-0 z-50 bg-neutral-900/80 backdrop-blur-md shadow-lg">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-dm-mono font-bold text-white">Couple's Love Frames 💖</h1>
+            <div class="glyph-loader" id="loadingIndicator">
+                <div class="glyph-bar-sm"></div><div class="glyph-bar-sm"></div><div class="glyph-bar-sm"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-wrapper container mx-auto py-6 px-4">
+        <div class="w-full lg:w-2/5 xl:w-1/3 space-y-6 mb-8 lg:mb-0 options-panel">
+            <div>
+                <h2 class="text-xl section-title">1. Upload Your Photo</h2>
+                <input type="file" id="imageUpload" accept="image/*" class="styled-input w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-slate-100 hover:file:bg-slate-600">
+                <p class="text-xs text-neutral-400 mt-2">Share your lovely moment!</p>
+            </div>
+
+            <div>
+                <h2 class="text-xl section-title">2. Add Text & Watermark</h2>
+                <div id="quoteInputContainer" class="my-2">
+                    <label for="quoteInput" class="block text-sm font-dm-mono text-neutral-300 mb-1">Frame Text / Quote:</label>
+                    <textarea id="quoteInput" rows="2" class="styled-textarea w-full bg-neutral-700" placeholder="e.g., Always & Forever..."></textarea>
+                    <div class="flex space-x-2 mt-1">
+                        <button id="quote1" class="text-xs px-2 py-1 bg-pink-600 hover:bg-pink-500 rounded">"My Heart is Yours"</button>
+                        <button id="quote2" class="text-xs px-2 py-1 bg-pink-600 hover:bg-pink-500 rounded">"Two Souls, One Heart"</button>
+                    </div>
+                </div>
+                <div class="my-3">
+                    <label for="userWatermarkInput" class="block text-sm font-dm-mono text-neutral-300 mb-1">Optional Watermark:</label>
+                    <input type="text" id="userWatermarkInput" class="styled-input w-full bg-neutral-700" placeholder="Your name or initials">
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="showUserWatermark"> Show my watermark
+                </label>
+            </div>
+            
+            <div>
+                <h2 class="text-xl section-title">3. Choose a Lovely Frame</h2>
+                <div id="frameButtonsContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {/* Frame buttons will be dynamically added */}
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-3/5 xl:w-2/3 space-y-6">
+            <div class="options-panel p-4 md:p-6">
+                 <h2 class="text-xl section-title text-center">✨ Preview Your Masterpiece ✨</h2>
+                <div class="max-w-full mx-auto relative aspect-[4/3] bg-neutral-800 rounded-md flex items-center justify-center overflow-hidden">
+                    <canvas id="previewCanvas" width="800" height="600"></canvas>
+                    <p id="canvasPlaceholder" class="absolute inset-0 flex items-center justify-center text-neutral-500 font-dm-mono text-lg pointer-events-none">Upload a photo to begin</p>
+                </div>
+                <button id="downloadButton" class="styled-button download-button w-full mt-6 py-3 text-lg" disabled>Download Framed Photo</button>
+                 <p class="text-xs text-center mt-2 text-neutral-400">All images feature the `@WilliamEST FanUniverse` mark.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-4 bg-neutral-950 text-center mt-auto">
+        <p class="text-neutral-500 text-xs font-dm-mono">A WilliamEST FanUniverse Creation &copy; <span id="currentYear"></span></p>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const imageUpload = document.getElementById('imageUpload');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const ctx = previewCanvas.getContext('2d');
+        const downloadButton = document.getElementById('downloadButton');
+        const frameButtonsContainer = document.getElementById('frameButtonsContainer');
+        const currentYearSpan = document.getElementById('currentYear');
+        const canvasPlaceholder = document.getElementById('canvasPlaceholder');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        
+        const quoteInputContainer = document.getElementById('quoteInputContainer');
+        const quoteInput = document.getElementById('quoteInput');
+        const userWatermarkInput = document.getElementById('userWatermarkInput');
+        const showUserWatermarkCheckbox = document.getElementById('showUserWatermark');
+
+        const quoteBtn1 = document.getElementById('quote1');
+        const quoteBtn2 = document.getElementById('quote2');
+
+
+        let uploadedImage = null;
+        let currentFrame = 'none';
+        let animationFrameId = null;
+        let particles = [];
+
+        const CANVAS_MAX_WIDTH = 1200; // Increased for better quality
+        const CANVAS_MAX_HEIGHT = 900;
+        const FAN_WATERMARK = "@WilliamEST FanUniverse";
+
+        // --- Available Frames ---
+        const frames = [
+            // Classics & General
+            { id: 'none', name: 'No Frame', group: 'Basic' },
+            { id: 'blackAndWhite', name: 'B & W', group: 'Basic' },
+            { id: 'gradientBorder', name: 'Love Gradient', group: 'Basic' },
+            // Couples & Romantic
+            { id: 'heartFlowBorder', name: 'Heart Flow', group: 'Romantic' },
+            { id: 'intertwinedHearts', name: 'Intertwined Hearts', group: 'Romantic' },
+            { id: 'loveLyrics', name: 'Couple Quote', group: 'Romantic', needsText: true },
+            { id: 'romanticSparkles', name: 'Romantic Sparkles', group: 'Animated' },
+            { id: 'cherryBlossomsPink', name: 'Pink Blossoms', group: 'Animated' },
+            // Fan & Character Inspired
+            { id: 'westieLovePaws', name: "Westie's Love", group: 'Fan Favorites' },
+            { id: 'ourHeroPapa', name: "Our Hero Papa", group: 'Fan Favorites' },
+            // "My Opinions" (Thematic Styles)
+            { id: 'foreverAlwaysGlow', name: 'Forever & Always', group: 'Thematic', needsText: true, defaultText: "Forever & Always" },
+            { id: 'starCrossedNight', name: 'Star-Crossed', group: 'Thematic' },
+            { id: 'adventureAwaits', name: 'Adventure Awaits', group: 'Thematic', needsText: true, defaultText: "Our Adventure Awaits" },
+            // Re-add some versatile ones
+            { id: 'glitterOverlay', name: 'Rose Gold Glitter', group: 'Effects' },
+            { id: 'confettiHearts', name: 'Heart Confetti', group: 'Animated' },
+            { id: 'bubblesLove', name: 'Love Bubbles', group: 'Animated' },
+        ];
+
+        function init() {
+            currentYearSpan.textContent = new Date().getFullYear();
+            populateFrameButtons();
+            setupEventListeners();
+            drawCanvasBackground();
+        }
+
+        function populateFrameButtons() {
+            const groups = {};
+            frames.forEach(frame => {
+                if (!groups[frame.group]) groups[frame.group] = [];
+                groups[frame.group].push(frame);
+            });
+
+            for (const groupName in groups) {
+                const groupTitle = document.createElement('h3');
+                groupTitle.textContent = groupName;
+                groupTitle.className = "col-span-full text-sm font-dm-mono text-pink-400 mt-3 mb-1";
+                frameButtonsContainer.appendChild(groupTitle);
+
+                groups[groupName].forEach(frame => {
+                    const button = document.createElement('button');
+                    button.classList.add('frame-button');
+                    button.textContent = frame.name;
+                    button.dataset.frameId = frame.id;
+                    button.addEventListener('click', () => {
+                        setActiveFrame(frame.id, frame.needsText, frame.defaultText);
+                    });
+                    frameButtonsContainer.appendChild(button);
+                });
+            }
+        }
+
+        function setupEventListeners() {
+            imageUpload.addEventListener('change', handleImageUpload);
+            downloadButton.addEventListener('click', handleDownload);
+            quoteInput.addEventListener('input', redrawCanvasWithDelay);
+            userWatermarkInput.addEventListener('input', redrawCanvasWithDelay);
+            showUserWatermarkCheckbox.addEventListener('change', redrawCanvasWithDelay);
+
+            quoteBtn1.addEventListener('click', () => { quoteInput.value = "My Heart is Yours"; redrawCanvasWithDelay(); });
+            quoteBtn2.addEventListener('click', () => { quoteInput.value = "Two Souls, One Heart"; redrawCanvasWithDelay(); });
+        }
+        
+        let redrawTimeout;
+        function redrawCanvasWithDelay() {
+            clearTimeout(redrawTimeout);
+            redrawTimeout = setTimeout(redrawCanvas, 250); // Debounce redraw
+        }
+
+
+        function showLoading(isLoading) {
+            loadingIndicator.classList.toggle('visible', isLoading);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                showLoading(true);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImage = new Image();
+                    uploadedImage.onload = () => {
+                        canvasPlaceholder.classList.add('hidden');
+                        resizeCanvasToImage();
+                        redrawCanvas();
+                        downloadButton.disabled = false;
+                        showLoading(false);
+                    };
+                    uploadedImage.onerror = () => {
+                        alert("Error loading image."); canvasPlaceholder.textContent = "Error.";
+                        canvasPlaceholder.classList.remove('hidden'); uploadedImage = null; showLoading(false);
+                    }
+                    uploadedImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resizeCanvasToImage() {
+            if (!uploadedImage) return;
+            let ar = uploadedImage.naturalWidth / uploadedImage.naturalHeight;
+            let newWidth, newHeight;
+
+            if (previewCanvas.parentElement.clientWidth / previewCanvas.parentElement.clientHeight > ar) {
+                newHeight = Math.min(CANVAS_MAX_HEIGHT, previewCanvas.parentElement.clientHeight);
+                newWidth = newHeight * ar;
+            } else {
+                newWidth = Math.min(CANVAS_MAX_WIDTH, previewCanvas.parentElement.clientWidth);
+                newHeight = newWidth / ar;
+            }
+            // Fallback if parent has no dimensions yet
+            if (!newWidth || !newHeight) {
+                 let ratio = Math.min(CANVAS_MAX_WIDTH / uploadedImage.naturalWidth, CANVAS_MAX_HEIGHT / uploadedImage.naturalHeight);
+                 newWidth = uploadedImage.naturalWidth * ratio;
+                 newHeight = uploadedImage.naturalHeight * ratio;
+            }
+
+            previewCanvas.width = newWidth;
+            previewCanvas.height = newHeight;
+        }
+
+
+        function drawCanvasBackground() {
+            ctx.fillStyle = '#1f2937';
+            ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+            if (!uploadedImage) canvasPlaceholder.classList.remove('hidden');
+        }
+
+        function redrawCanvas() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+            particles = [];
+
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            drawCanvasBackground();
+
+            if (uploadedImage) {
+                ctx.save();
+                if (currentFrame === 'blackAndWhite') ctx.filter = 'grayscale(100%)';
+                else ctx.filter = 'none';
+                
+                ctx.drawImage(uploadedImage, 0, 0, previewCanvas.width, previewCanvas.height);
+                ctx.restore();
+                applyFrame(currentFrame);
+                drawWatermarks();
+            } else {
+                canvasPlaceholder.textContent = "Upload a photo";
+                canvasPlaceholder.classList.remove('hidden');
+            }
+        }
+        
+        function drawWatermarks() {
+            const w = previewCanvas.width;
+            const h = previewCanvas.height;
+            const baseFontSize = Math.min(w, h) * 0.015;
+
+            // Compulsory Watermark
+            ctx.font = `italic ${baseFontSize * 0.9}px 'DM Mono', monospace`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.textAlign = 'right';
+            ctx.fillText(FAN_WATERMARK, w - 10, h - 10);
+
+            // Optional User Watermark
+            if (showUserWatermarkCheckbox.checked && userWatermarkInput.value.trim() !== '') {
+                ctx.font = `italic ${baseFontSize}px 'DM Mono', monospace`;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.textAlign = 'left';
+                ctx.fillText(userWatermarkInput.value.trim(), 10, h - 10);
+            }
+        }
+
+
+        function setActiveFrame(frameId, needsText = false, defaultText = "") {
+            currentFrame = frameId;
+            document.querySelectorAll('.frame-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.frameId === frameId);
+            });
+             if (needsText && quoteInput.value.trim() === "" && defaultText) {
+                quoteInput.value = defaultText;
+            }
+            redrawCanvas();
+        }
+
+        // --- Frame Application & Drawing ---
+        function applyFrame(frameId) {
+            const w = previewCanvas.width;
+            const h = previewCanvas.height;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            particles = [];
+
+            const frameConfig = frames.find(f => f.id === frameId);
+
+            switch (frameId) {
+                case 'gradientBorder': drawGradientBorder(w, h, ['#ec4899', '#f87171', '#fbbf24']); break; // Pink, Coral, Amber
+                case 'heartFlowBorder': drawHeartFlowBorder(w,h); break;
+                case 'intertwinedHearts': drawIntertwinedHearts(w,h); break;
+                case 'loveLyrics': drawTextOnCanvas(quoteInput.value || "My Love...", w, h, { font: 'Parisienne', color: '#fda4af', strokeColor: '#701a75', yPosFactor: 0.85 }); break;
+                case 'foreverAlwaysGlow': drawTextOnCanvas(quoteInput.value || "Forever & Always", w, h, { font: 'Parisienne', color: '#fce7f3', strokeColor: '#86198f', glow: 'rgba(236, 72, 153, 0.7)', yPosFactor: 0.5 }); break;
+                case 'adventureAwaits': drawAdventureAwaitsFrame(w,h, quoteInput.value || "Our Adventure Awaits"); break;
+                case 'starCrossedNight': drawStarryNight(w,h); break;
+                case 'westieLovePaws': drawWestieLoveFrame(w,h); break;
+                case 'ourHeroPapa': drawOurHeroPapaFrame(w,h); break;
+                case 'glitterOverlay': drawGlitter(w, h, 'rgba(251, 146, 60, 0.6)'); break; // Rose goldish
+                case 'romanticSparkles': case 'cherryBlossomsPink': case 'confettiHearts': case 'bubblesLove':
+                    initParticles(frameId, w, h);
+                    animateParticles(frameId);
+                    break;
+            }
+        }
+
+        function drawTextOnCanvas(text, w, h, options = {}) {
+            const defaults = {
+                font: 'Parisienne', // Default to romantic script font
+                color: '#fce7f3', // Light pink
+                strokeColor: '#831843', // Dark magenta
+                glow: null,
+                yPosFactor: 0.85, // Position towards bottom by default
+                textAlign: 'center',
+                baseSizeFactor: 0.08
+            };
+            const settings = { ...defaults, ...options };
+
+            ctx.textAlign = settings.textAlign;
+            ctx.fillStyle = settings.color;
+            
+            let fontSize = Math.min(w, h) * settings.baseSizeFactor;
+            if (text.length > 20) fontSize *= 0.8;
+            if (text.length > 40) fontSize *= 0.8;
+            ctx.font = `bold ${fontSize}px '${settings.font}', cursive`;
+            
+            if (settings.glow) {
+                ctx.shadowColor = settings.glow;
+                ctx.shadowBlur = 15;
+            }
+             if (settings.strokeColor) {
+                ctx.strokeStyle = settings.strokeColor;
+                ctx.lineWidth = fontSize * 0.05; // Relative stroke width
+            }
+
+
+            const lines = text.split('\n');
+            const lineHeight = fontSize * 1.2;
+            const totalTextHeight = lines.length * lineHeight;
+            let startY = h * settings.yPosFactor - totalTextHeight / 2 + lineHeight/2; // Adjust for multi-line centering
+
+            lines.forEach((line, index) => {
+                const yPos = startY + (index * lineHeight);
+                if(settings.strokeColor) ctx.strokeText(line, w / 2, yPos);
+                ctx.fillText(line, w / 2, yPos);
+            });
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; // Reset shadow
+        }
+
+        function drawGradientBorder(w, h, colors) {
+            const thickness = Math.min(w,h) * 0.03;
+            ctx.lineWidth = thickness;
+            const grad = ctx.createLinearGradient(0, 0, w, h);
+            colors.forEach((color, index) => grad.addColorStop(index / (colors.length -1), color));
+            ctx.strokeStyle = grad;
+            ctx.strokeRect(thickness / 2, thickness / 2, w - thickness, h - thickness);
+        }
+        
+        function drawHeart(x, y, size, color = '#ec4899') {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x, y + size / 4);
+            ctx.quadraticCurveTo(x, y, x + size / 4, y);
+            ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
+            ctx.quadraticCurveTo(x + size / 2, y, x + size * 3/4, y);
+            ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4);
+            ctx.quadraticCurveTo(x + size, y + size / 2, x + size * 3/4, y + size * 3/4);
+            ctx.lineTo(x + size / 2, y + size);
+            ctx.lineTo(x + size / 4, y + size * 3/4);
+            ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4);
+            ctx.fill();
+        }
+
+        function drawHeartFlowBorder(w,h){
+            const heartSize = Math.min(w,h) * 0.04;
+            const padding = heartSize * 0.5;
+            const numHeartsX = Math.floor((w - 2*padding) / (heartSize * 1.2));
+            const numHeartsY = Math.floor((h - 2*padding) / (heartSize * 1.2));
+
+            for(let i=0; i<numHeartsX; i++) { // Top & Bottom
+                drawHeart(padding + i * (heartSize*1.2) , padding, heartSize, `hsl(${i*20 % 360}, 90%, 70%)`);
+                drawHeart(padding + i * (heartSize*1.2) , h - padding - heartSize, heartSize, `hsl(${180 + i*20 % 360}, 90%, 70%)`);
+            }
+            for(let i=0; i<numHeartsY; i++) { // Left & Right
+                drawHeart(padding , padding + i * (heartSize*1.2), heartSize, `hsl(${90 + i*20 % 360}, 90%, 70%)`);
+                drawHeart(w - padding - heartSize , padding + i * (heartSize*1.2), heartSize, `hsl(${270 + i*20 % 360}, 90%, 70%)`);
+            }
+        }
+        
+        function drawIntertwinedHearts(w,h){
+            const heartSize = Math.min(w,h) * 0.15;
+            drawHeart(w/2 - heartSize*0.7, h/2 - heartSize/2, heartSize, 'rgba(236, 72, 153, 0.7)'); // Pink
+            ctx.save(); ctx.translate(w/2 + heartSize*0.2, h/2 - heartSize/2); ctx.rotate(0.2);
+            drawHeart(0,0, heartSize, 'rgba(168, 85, 247, 0.7)'); // Purple
+            ctx.restore();
+        }
+        
+        function drawStarryNight(w,h){
+            ctx.fillStyle = 'rgba(10, 5, 30, 0.3)'; // Deep night sky tint
+            ctx.fillRect(0,0,w,h);
+            for(let i=0; i<100; i++){
+                ctx.fillStyle = `rgba(255, 255, 220, ${Math.random()*0.8 + 0.2})`;
+                ctx.beginPath();
+                ctx.arc(Math.random()*w, Math.random()*h*0.7, Math.random()*1.5 + 0.5, 0, Math.PI*2);
+                ctx.fill();
+            }
+            drawTextOnCanvas(quoteInput.value || "Written in the Stars", w, h, {yPosFactor: 0.8, color: '#e0e7ff', strokeColor: '#312e81'});
+        }
+
+        function drawPawPrint(x, y, size, color = 'rgba(200,180,170,0.8)') {
+            ctx.fillStyle = color;
+            // Main pad
+            ctx.beginPath();
+            ctx.ellipse(x, y, size * 0.6, size * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Toes
+            const toeSize = size * 0.2;
+            ctx.beginPath(); ctx.arc(x - size * 0.4, y - size * 0.4, toeSize, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x - size * 0.15, y - size * 0.5, toeSize, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + size * 0.15, y - size * 0.5, toeSize, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + size * 0.4, y - size * 0.4, toeSize, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function drawWestieLoveFrame(w,h){
+            const pawSize = Math.min(w,h)*0.05;
+            drawPawPrint(w*0.15, h*0.15, pawSize);
+            drawPawPrint(w*0.85, h*0.85, pawSize);
+            drawPawPrint(w*0.8, h*0.2, pawSize, 'rgba(255,220,210,0.7)');
+            drawPawPrint(w*0.2, h*0.75, pawSize, 'rgba(255,220,210,0.7)');
+            drawHeart(w*0.5 - pawSize, h*0.05, pawSize*1.5);
+            drawTextOnCanvas(quoteInput.value || "Pawsitively in Love!", w,h, {yPosFactor: 0.9, color: '#a16207', font: 'DM Mono'});
+        }
+
+        function drawOurHeroPapaFrame(w,h){
+            ctx.fillStyle = 'rgba(30, 58, 138, 0.2)'; // Deep blue tint
+            ctx.fillRect(0,0,w,h);
+            const bannerHeight = h * 0.15;
+            ctx.fillStyle = '#1e3a8a'; // Dark blue
+            ctx.beginPath();
+            ctx.moveTo(0, h*0.05); ctx.lineTo(w, h*0.05);
+            ctx.lineTo(w*0.95, h*0.05 + bannerHeight/2); ctx.lineTo(w, h*0.05 + bannerHeight);
+            ctx.lineTo(0, h*0.05 + bannerHeight); ctx.lineTo(w*0.05, h*0.05 + bannerHeight/2);
+            ctx.closePath(); ctx.fill();
+            drawTextOnCanvas(quoteInput.value || "To Our Hero Papa", w, h*0.05 + bannerHeight/1.8, {yPosFactor:0.5, font:'DM Mono', color:'#bfdbfe', baseSizeFactor:0.04});
+            // Add some subtle gold stars or accents
+            for(let i=0; i<3; i++) drawStar(w*(0.2 + i*0.3), h*0.9, Math.min(w,h)*0.02, 'gold');
+        }
+        
+        function drawStar(cx, cy, outerRadius, color) {
+            let spikes = 5;
+            let innerRadius = outerRadius/2;
+            ctx.beginPath();
+            ctx.translate(cx, cy);
+            ctx.moveTo(0, 0 - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                ctx.rotate(Math.PI / spikes);
+                ctx.lineTo(0, 0 - innerRadius);
+                ctx.rotate(Math.PI / spikes);
+                ctx.lineTo(0, 0 - outerRadius);
+            }
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+        }
+
+
+        function drawAdventureAwaitsFrame(w,h, text){
+            ctx.fillStyle = 'rgba(120, 80, 50, 0.1)'; // Earthy tint
+            ctx.fillRect(0,0,w,h);
+            // Simple compass rose
+            const cx = w * 0.1, cy = h * 0.1, r = Math.min(w,h)*0.05;
+            ctx.strokeStyle = '#854d0e'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); // Circle
+            ['N','E','S','W'].forEach((dir, i) => {
+                const angle = i * Math.PI/2 - Math.PI/2;
+                ctx.moveTo(cx + Math.cos(angle)*r*0.8, cy + Math.sin(angle)*r*0.8);
+                ctx.lineTo(cx + Math.cos(angle)*r*1.2, cy + Math.sin(angle)*r*1.2);
+                ctx.stroke();
+                ctx.fillText(dir, cx + Math.cos(angle)*r*1.4, cy + Math.sin(angle)*r*1.4 + 5);
+            });
+            drawTextOnCanvas(text, w,h, {yPosFactor: 0.85, font: 'DM Mono', color: '#854d0e'});
+        }
+
+        function drawGlitter(w, h, color = 'rgba(255, 215, 0, 0.6)') {
+            for (let i = 0; i < 300; i++) {
+                ctx.fillStyle = color.replace(/, [0-9.]+\)/, `, ${Math.random()*0.4 + 0.3})`); // Vary opacity
+                ctx.beginPath();
+                ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 2 + 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // --- Particle System (Adapted) ---
+        function createParticle(type, w, h) {
+            const p = {
+                x: Math.random() * w,
+                y: type === 'bubblesLove' ? h + Math.random() * 50 : Math.random() * h * 0.1 - 20,
+                vx: (Math.random() - 0.5) * (type === 'confettiHearts' ? 1.5 : 0.5),
+                vy: Math.random() * (type === 'bubblesLove' ? -1.5 : 1.5) + 0.3,
+                size: Math.random() * (type === 'confettiHearts' ? 8 : type === 'cherryBlossomsPink' ? 10 : 6) + 4,
+                color: type === 'romanticSparkles' ? `hsl(${330 + Math.random()*60}, 100%, ${75 + Math.random()*20}%)` : // Pinks, reds, purples
+                       type === 'cherryBlossomsPink' ? `hsl(330, 100%, ${85 + Math.random()*10}%)` :
+                       type === 'confettiHearts' ? `hsl(${Math.random() < 0.5 ? 0 : 330}, 90%, 70%)` : // Red & Pink hearts
+                       type === 'bubblesLove' ? `rgba(252, 165, 165, ${Math.random()*0.3 + 0.2})` : // Light pink bubbles
+                       `rgba(255, 255, 224, ${Math.random() * 0.5 + 0.5})`,
+                type: type,
+                angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.05
+            };
+            return p;
+        }
+
+        function initParticles(type, w, h) {
+            particles = [];
+            const count = type === 'romanticSparkles' ? 60 : type === 'cherryBlossomsPink' ? 40 : type === 'confettiHearts' ? 50 : 30;
+            for (let i = 0; i < count; i++) particles.push(createParticle(type, w, h));
+        }
+
+        function updateAndDrawParticles(type, w, h) {
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+
+                if (p.y > h + p.size || p.y < -p.size || p.x > w + p.size || p.x < -p.size) { // Boundary
+                    particles[i] = createParticle(type, w, h);
+                    if (type === 'bubblesLove') particles[i].y = h + Math.random() * 20; else particles[i].y = -p.size;
+                }
+
+                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle); ctx.fillStyle = p.color;
+                if (type === 'romanticSparkles') { // Star shape
+                    ctx.beginPath();
+                    for (let j = 0; j < 5; j++) {
+                        ctx.lineTo(Math.cos((18 + j * 72) / 180 * Math.PI) * p.size, -Math.sin((18 + j * 72) / 180 * Math.PI) * p.size);
+                        ctx.lineTo(Math.cos((54 + j * 72) / 180 * Math.PI) * p.size * 0.4, -Math.sin((54 + j * 72) / 180 * Math.PI) * p.size * 0.4);
+                    }
+                    ctx.closePath(); ctx.fill();
+                } else if (type === 'cherryBlossomsPink') { // Petal
+                    ctx.beginPath(); ctx.ellipse(0, 0, p.size, p.size / 2, Math.PI / 4, 0, 2 * Math.PI); ctx.fill();
+                } else if (type === 'confettiHearts') { // Draw small hearts
+                    const s = p.size * 0.7; // scale down for confetti
+                    ctx.moveTo(0, s/4);
+                    ctx.quadraticCurveTo(0,0,s/4,0); ctx.quadraticCurveTo(s/2,0,s/2,s/4);
+                    ctx.quadraticCurveTo(s/2,0,s*3/4,0); ctx.quadraticCurveTo(s,0,s,s/4);
+                    ctx.quadraticCurveTo(s,s/2,s*3/4,s*3/4); ctx.lineTo(s/2,s);
+                    ctx.lineTo(s/4,s*3/4); ctx.quadraticCurveTo(0,s/2,0,s/4);
+                    ctx.fill();
+                } else if (type === 'bubblesLove') {
+                    ctx.beginPath(); ctx.arc(0,0,p.size,0,Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+        
+        function animateParticles(type) {
+            ctx.drawImage(uploadedImage, 0, 0, previewCanvas.width, previewCanvas.height); // Base image
+            // Re-apply current non-animated frame elements if needed before particles (e.g., a static border)
+            // This version assumes particle frames are exclusive or draw over a plain image
+            updateAndDrawParticles(type, previewCanvas.width, previewCanvas.height);
+            drawWatermarks(); // Draw watermarks on top of animation
+            animationFrameId = requestAnimationFrame(() => animateParticles(type));
+        }
+        
+        // --- Download ---
+        function handleDownload() {
+            if (!uploadedImage) { alert("Please upload an image first."); return; }
+            showLoading(true);
+            // For animated frames, we need to ensure a "final" draw before capture if animation is running.
+            // The current redrawCanvas() stops animation then applies frame.
+            // If animation was active, applyFrame would have started it. For download, draw one last time.
+            if (animationFrameId) { // If animation is running
+                cancelAnimationFrame(animationFrameId); // Stop it
+                // Redraw the image and the current state of particles without starting animation loop
+                ctx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
+                if (uploadedImage) ctx.drawImage(uploadedImage, 0, 0, previewCanvas.width, previewCanvas.height);
+                updateAndDrawParticles(currentFrame, previewCanvas.width, previewCanvas.height); // Draw particles once
+                drawWatermarks(); // Add watermarks
+            } else {
+                // If not animating, canvas should be up-to-date from redrawCanvas()
+                // But to be safe, ensure all elements are drawn
+                redrawCanvas(); // This will draw everything statically
+            }
+
+            const dataURL = previewCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'CoupleLoveFrame-WilliamEST.png';
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showLoading(false);
+        }
+        init();
+    </script>
+</body>
+</html>
