@@ -172,6 +172,16 @@
             #previewCanvas {
                 max-height: 50vh;
             }
+            /* Adjust header for mobile to stack items */
+            header .container {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem; /* Space between logo and nav */
+            }
+            header nav {
+                width: 100%; /* Make nav take full width */
+                justify-content: center; /* Center buttons */
+            }
         }
 
     </style>
@@ -186,7 +196,7 @@
                 <div class="glyph-bar-sm"></div>
                 <div class="glyph-bar-sm"></div>
             </div>
-            <nav class="hidden md:flex space-x-4">
+            <nav class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mt-2 md:mt-0">
                 <a href="couple-frame.html" class="styled-button bg-blue-600 hover:bg-blue-700">Couple Photo Frame</a>
                 <a href="iconic-frame.html" class="styled-button bg-purple-600 hover:bg-purple-700">WE Iconic Frame</a>
             </nav>
