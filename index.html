@@ -186,6 +186,10 @@
                 <div class="glyph-bar-sm"></div>
                 <div class="glyph-bar-sm"></div>
             </div>
+            <nav class="hidden md:flex space-x-4">
+                <a href="couple-frame.html" class="styled-button bg-blue-600 hover:bg-blue-700">Couple Photo Frame</a>
+                <a href="iconic-frame.html" class="styled-button bg-purple-600 hover:bg-purple-700">WE Iconic Frame</a>
+            </nav>
         </div>
     </header>
 
@@ -297,9 +301,9 @@
             imageUpload.addEventListener('change', handleImageUpload);
             downloadButton.addEventListener('click', handleDownload);
             quoteInput.addEventListener('input', () => {
-                 if (currentFrame === 'loveLyrics' || currentFrame === 'customQuote') {
-                    redrawCanvas();
-                 }
+                   if (currentFrame === 'loveLyrics' || currentFrame === 'customQuote') {
+                     redrawCanvas();
+                   }
             });
         }
 
@@ -341,7 +345,7 @@
             let ratio = Math.min(CANVAS_MAX_WIDTH / uploadedImage.naturalWidth, CANVAS_MAX_HEIGHT / uploadedImage.naturalHeight);
             // If image is smaller than max dimensions, don't scale up beyond its natural size unless it's very small
             if (uploadedImage.naturalWidth < CANVAS_MAX_WIDTH && uploadedImage.naturalHeight < CANVAS_MAX_HEIGHT) {
-                 ratio = Math.min(1, ratio); // Don't upscale small images too much, but ensure they fit if large
+                ratio = Math.min(1, ratio); // Don't upscale small images too much, but ensure they fit if large
             }
             
             previewCanvas.width = uploadedImage.naturalWidth * ratio;
@@ -383,8 +387,8 @@
 
                 applyFrame(currentFrame);
             } else {
-                 canvasPlaceholder.textContent = "Upload an image to begin";
-                 canvasPlaceholder.classList.remove('hidden');
+                canvasPlaceholder.textContent = "Upload an image to begin";
+                canvasPlaceholder.classList.remove('hidden');
             }
         }
 
@@ -554,11 +558,11 @@
                 vy: Math.random() * (type === 'bubbles' ? -2 : 2) + 0.5, // Bubbles move up
                 size: Math.random() * (type === 'snowflakes' ? 4 : (type === 'cherryBlossoms' ? 10 : 6)) + 2,
                 color: type === 'snowflakes' ? 'white' : 
-                       type === 'cherryBlossoms' ? `hsl(330, 100%, ${80 + Math.random()*15}%)` : // Pinks
-                       type === 'confetti' ? `hsl(${Math.random() * 360}, 100%, 70%)` : 
-                       type === 'bubbles' ? 'rgba(200, 220, 255, 0.5)' :
-                       type === 'rain' ? 'rgba(150, 180, 255, 0.7)' :
-                       `rgba(255, 255, 224, ${Math.random() * 0.5 + 0.5})`, // Sparkles
+                        type === 'cherryBlossoms' ? `hsl(330, 100%, ${80 + Math.random()*15}%)` : // Pinks
+                        type === 'confetti' ? `hsl(${Math.random() * 360}, 100%, 70%)` : 
+                        type === 'bubbles' ? 'rgba(200, 220, 255, 0.5)' :
+                        type === 'rain' ? 'rgba(150, 180, 255, 0.7)' :
+                        `rgba(255, 255, 224, ${Math.random() * 0.5 + 0.5})`, // Sparkles
                 type: type,
                 angle: type === 'cherryBlossoms' || type === 'confetti' ? Math.random() * Math.PI * 2 : 0,
                 spin: type === 'cherryBlossoms' || type === 'confetti' ? (Math.random() - 0.5) * 0.1 : 0
@@ -663,7 +667,7 @@
             // If an animation is running, it captures that frame.
             // To ensure all static elements are drawn if animation was just stopped:
             if (!animationFrameId && currentFrame !== 'none' && currentFrame !== 'blackAndWhite') {
-                 // Temporarily redraw static parts of the frame if it's a particle one that just stopped
+                // Temporarily redraw static parts of the frame if it's a particle one that just stopped
                 if (['sparkles', 'snowflakes', 'confetti', 'bubbles', 'rain', 'cherryBlossoms'].includes(currentFrame)) {
                     // This is tricky because particles are drawn over time.
                     // For download, we might want to draw a "final" state of particles or just the image.
@@ -687,4 +691,4 @@
     </script>
 
 </body>
-</html>        
+</html>
